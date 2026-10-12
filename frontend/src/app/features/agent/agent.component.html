@@ -1,0 +1,262 @@
+<div class="agent-container">
+  <!-- Header Section -->
+  <header class="app-header">
+    <div class="header-content">
+      <div class="badge-cluster">
+        <span class="system-badge">
+          <span class="status-dot" [class.online]="health()?.status === 'healthy'"></span>
+          {{ health()?.status === 'healthy' ? 'Backend Online' : 'Connecting to API...' }}
+        </span>
+        <span class="tool-pill" title="Web Search Enabled">
+          <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          Search
+        </span>
+        <span class="tool-pill" title="Safe Math Calculator">
+          <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="4" y="2" width="16" height="20" rx="2"></rect>
+            <line x1="8" y1="6" x2="16" y2="6"></line>
+            <line x1="16" y1="14" x2="16" y2="18"></line>
+            <path d="M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M8 18h.01M12 18h.01"></path>
+          </svg>
+          Calculator
+        </span>
+        <span class="tool-pill" title="Real-time Weather">
+          <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path>
+          </svg>
+          Weather
+        </span>
+      </div>
+
+      <h1 class="app-title">Multi-Tool Agent</h1>
+      <p class="app-subtitle">One AI agent. Multiple tools. Smarter answers.</p>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <!-- Input Section -->
+    <section class="query-card">
+      <form (ngSubmit)="submitQuery()" class="query-form">
+        <label for="queryInput" class="visually-hidden">Ask the Multi-Tool Agent</label>
+        <div class="input-wrapper">
+          <textarea
+            id="queryInput"
+            name="query"
+            rows="3"
+            [ngModel]="query()"
+            (ngModelChange)="query.set($event)"
+            (keydown)="handleKeyDown($event)"
+            placeholder="Ask a question, request a calculation, check weather, or search the web..."
+            class="query-textarea"
+            [disabled]="isLoading()"
+          ></textarea>
+        </div>
+
+        <div class="form-actions">
+          <span class="keyboard-hint">Press <strong>Enter</strong> to submit, <strong>Shift + Enter</strong> for newline</span>
+          <button
+            type="submit"
+            id="submitBtn"
+            class="submit-button"
+            [disabled]="isLoading() || !query().trim()"
+          >
+            <span *ngIf="!isLoading()" class="btn-content">
+              <span>Ask Agent</span>
+              <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+              </svg>
+            </span>
+            <span *ngIf="isLoading()" class="btn-loading">
+              <span class="spinner"></span>
+              <span>Reasoning...</span>
+            </span>
+          </button>
+        </div>
+      </form>
+
+      <!-- Example Queries -->
+      <div class="examples-section">
+        <span class="examples-label">Try an example:</span>
+        <div class="example-chips">
+          <button
+            *ngFor="let ex of exampleQueries"
+            type="button"
+            class="example-chip"
+            (click)="setQuery(ex)"
+            [disabled]="isLoading()"
+          >
+            {{ ex }}
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Error Alert -->
+    <section *ngIf="errorMessage()" class="alert-box error" role="alert">
+      <div class="alert-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+      </div>
+      <div class="alert-content">
+        <p class="alert-title">Processing Notice</p>
+        <p class="alert-desc">{{ errorMessage() }}</p>
+      </div>
+      <button type="button" class="retry-btn" (click)="retry()" [disabled]="isLoading()">
+        Retry
+      </button>
+    </section>
+
+    <!-- Loading State -->
+    <section *ngIf="isLoading()" class="loading-card">
+      <div class="loading-indicator">
+        <div class="pulsing-orbit"></div>
+        <div class="loading-text-group">
+          <span class="loading-headline">Agent Orchestrating Tools</span>
+          <span class="loading-subline">Analyzing intent and retrieving real-time data...</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Results Section -->
+    <section *ngIf="lastResponse()" class="response-container">
+      <!-- Tool Execution Summary -->
+      <div class="tools-summary-card">
+        <div class="section-header">
+          <h2 class="section-title">Tool Execution</h2>
+          <span class="tool-count-badge" *ngIf="lastResponse()?.tools_used?.length">
+            {{ lastResponse()?.tools_used?.length }} tool(s) invoked
+          </span>
+        </div>
+
+        <!-- No Tools Used (Direct AI Answer) -->
+        <div *ngIf="lastResponse()?.tools_used?.length === 0" class="direct-ai-banner">
+          <div class="direct-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"></path>
+            </svg>
+          </div>
+          <div>
+            <span class="direct-headline">Answered directly by AI</span>
+            <p class="direct-desc">No external tools or calculations were required for this conceptual query.</p>
+          </div>
+        </div>
+
+        <!-- Tools Used List -->
+        <div *ngIf="(lastResponse()?.tools_used?.length || 0) > 0" class="tool-cards-list">
+          <div
+            *ngFor="let tool of lastResponse()?.tools_used"
+            class="tool-card"
+            [class.tool-success]="tool.status === 'success'"
+            [class.tool-error]="tool.status === 'error'"
+          >
+            <div class="tool-header">
+              <div class="tool-identity">
+                <!-- Icon: Web Search -->
+                <svg *ngIf="tool.name === 'web_search'" class="tool-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <!-- Icon: Calculator -->
+                <svg *ngIf="tool.name === 'calculator'" class="tool-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="4" y="2" width="16" height="20" rx="2"></rect>
+                  <line x1="8" y1="6" x2="16" y2="6"></line>
+                  <line x1="16" y1="14" x2="16" y2="18"></line>
+                  <path d="M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M8 18h.01M12 18h.01"></path>
+                </svg>
+                <!-- Icon: Weather -->
+                <svg *ngIf="tool.name === 'get_weather'" class="tool-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path>
+                </svg>
+                <span class="tool-name">{{ getToolDisplayName(tool.name) }}</span>
+              </div>
+              <span
+                class="status-indicator"
+                [class.status-success]="tool.status === 'success'"
+                [class.status-error]="tool.status === 'error'"
+              >
+                {{ tool.status === 'success' ? 'Completed' : 'Failed' }}
+              </span>
+            </div>
+            <p class="tool-summary">{{ tool.summary }}</p>
+            <p *ngIf="tool.detail && tool.status === 'error'" class="tool-detail error-text">
+              {{ tool.detail }}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Final Answer Card -->
+      <div class="answer-card">
+        <div class="answer-header">
+          <div class="answer-heading-group">
+            <span class="answer-tag">Final Response</span>
+            <h2 class="answer-title">Answer</h2>
+          </div>
+          <button type="button" class="copy-btn" (click)="copyAnswer()" [title]="copied() ? 'Copied!' : 'Copy to clipboard'">
+            <svg *ngIf="!copied()" class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            <svg *ngIf="copied()" class="icon-sm text-green" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            <span>{{ copied() ? 'Copied' : 'Copy' }}</span>
+          </button>
+        </div>
+
+        <div class="answer-body">
+          <p class="answer-text">{{ lastResponse()?.answer }}</p>
+        </div>
+      </div>
+
+      <!-- Sources Section -->
+      <div *ngIf="(lastResponse()?.sources?.length || 0) > 0" class="sources-card">
+        <h3 class="sources-title">
+          <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+          </svg>
+          Sourced References
+        </h3>
+        <div class="sources-list">
+          <a
+            *ngFor="let src of lastResponse()?.sources"
+            [href]="src.url"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="source-item"
+          >
+            <div class="source-top">
+              <span class="source-link-title">{{ src.title }}</span>
+              <svg class="icon-xs" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="10" y1="14" x2="21" y2="3"></line>
+              </svg>
+            </div>
+            <p *ngIf="src.snippet" class="source-snippet">{{ src.snippet }}</p>
+            <span class="source-url">{{ src.url }}</span>
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer Section -->
+  <footer class="app-footer">
+    <p class="footer-text">
+      Made with
+      <svg class="heart-icon" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+      </svg>
+      by <span class="author-name">Mahipal</span> | <a href="https://mahipal.tech" target="_blank" rel="noopener noreferrer" class="portfolio-link">mahipal.tech</a>
+    </p>
+  </footer>
+</div>
