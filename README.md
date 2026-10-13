@@ -1,4 +1,4 @@
-<img width="1337" height="1974" alt="main" src="https://github.com/user-attachments/assets/a2632106-f66f-4c09-a25f-f3d89636c145" />
+<img width="1356" height="2021" alt="main" src="https://github.com/user-attachments/assets/0cee90d9-a2e1-476e-8e0d-12620ceb3a7c" />
 
 
 # Multi-Tool AI Agent — Web Search, Calculator & Weather
